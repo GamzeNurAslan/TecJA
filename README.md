@@ -144,3 +144,10 @@ Test paketi şu senaryoları kapsar:
 ## Proje notu
 
 TecJA’nın temel farkı yalnızca grafik göstermek değildir. Veri hazırlama, müşteri yolculuğu, risk analizi, ISS bazlı erişim ve operasyonel raporlama aynı akışta birleştirilmiştir. Böylece ekipler sorunu yalnızca gördükleri anda değil, müşterinin yaşadığı yolculuğun tamamı üzerinden değerlendirebilir.
+
+## Copyright
+
+Copyright © 2026 Gamze Nur Aslan. All rights reserved.
+
+TecJA kaynak kodu, tasarımı ve dokümantasyonu sahibinin yazılı izni
+olmaksızın kopyalanamaz, dağıtılamaz veya ticari amaçla kullanılamaz.
