@@ -1,0 +1,6 @@
+Faker
+transformers
+torch
+fastapi
+uvicorn
+reportlab
