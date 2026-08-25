@@ -34,6 +34,16 @@ from backend.app.tenancy import (
 router = APIRouter()
 
 
+def analytics_provider_id_for_user(current_user):
+    """Keep dashboard/report analytics on the primary TecJA dataset.
+
+    Admin users can see the cross-provider overview through the dedicated
+    provider endpoint, while dashboard and report numbers stay comparable
+    with the original 5,000-customer dataset.
+    """
+    return provider_id_for_user(current_user) or DEFAULT_PROVIDER_ID
+
+
 class LoginRequest(BaseModel):
     email: str | None = None
     username: str | None = None
@@ -204,7 +214,7 @@ def get_providers(
 def get_summary(
     current_user=Depends(get_current_user),
 ):
-    provider_id = provider_id_for_user(current_user)
+    provider_id = analytics_provider_id_for_user(current_user)
     where_clause = ""
     parameters = []
 
@@ -379,10 +389,9 @@ def get_customer_metrics(
             risk_level.strip().lower()
         )
 
-    add_provider_condition(
-        conditions,
-        parameters,
-        current_user,
+    conditions.append("provider_id = ?")
+    parameters.append(
+        analytics_provider_id_for_user(current_user)
     )
 
     where_clause = ""
@@ -450,7 +459,7 @@ def get_journey_patterns(
     ),
     current_user=Depends(get_current_user),
 ):
-    provider_id = provider_id_for_user(current_user)
+    provider_id = analytics_provider_id_for_user(current_user)
     where_clause = ""
     parameters = []
 
@@ -486,7 +495,7 @@ def get_journey_patterns(
 def get_risk_summary(
     current_user=Depends(get_current_user),
 ):
-    provider_id = provider_id_for_user(current_user)
+    provider_id = analytics_provider_id_for_user(current_user)
     where_clause = ""
     parameters = []
 
@@ -555,7 +564,7 @@ def get_risk_summary(
 def get_ticket_categories(
     current_user=Depends(get_current_user),
 ):
-    provider_id = provider_id_for_user(current_user)
+    provider_id = analytics_provider_id_for_user(current_user)
     where_clause = ""
     parameters = []
 
@@ -786,7 +795,7 @@ def get_notifications(
 def get_ai_insights(
     current_user=Depends(get_current_user),
 ):
-    provider_id = provider_id_for_user(current_user)
+    provider_id = analytics_provider_id_for_user(current_user)
     where_clause = ""
     parameters = []
 
@@ -1697,4 +1706,3 @@ from fastapi import (
 )
 
 from pydantic import BaseModel
-
