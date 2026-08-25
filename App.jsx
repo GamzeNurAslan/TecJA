@@ -97,6 +97,35 @@ function getRiskClass(value) {
   return String(value || "").toLowerCase();
 }
 
+function normalizeRiskSummary(items) {
+  const source = Array.isArray(items) ? items : [];
+  const byLevel = new Map();
+
+  for (const item of source) {
+    const level = String(item?.risk_level || "").trim();
+    if (!["High", "Medium", "Low"].includes(level)) {
+      continue;
+    }
+
+    const normalized = {
+      ...item,
+      risk_level: level,
+      customer_count: Number(item.customer_count || 0),
+      churned_customers: Number(item.churned_customers || 0),
+      average_risk_score: Number(item.average_risk_score || 0),
+    };
+
+    const current = byLevel.get(level);
+    if (!current || normalized.customer_count > current.customer_count) {
+      byLevel.set(level, normalized);
+    }
+  }
+
+  return ["High", "Medium", "Low"]
+    .map((level) => byLevel.get(level))
+    .filter(Boolean);
+}
+
 function customerOptionLabel(customer) {
   return `${customer.customer_id || ""} · ${
     customer.first_name || ""
@@ -160,7 +189,7 @@ function buildReportRows({
     ["Risk Level", "Customer Count", "Average Score"],
   ];
 
-  riskSummary.forEach((risk) => {
+  normalizeRiskSummary(riskSummary).forEach((risk) => {
     rows.push([
       risk.risk_level,
       risk.customer_count,
@@ -366,7 +395,7 @@ function RiskPanel({ riskSummary }) {
       </div>
 
       <div className="risk-list">
-        {riskSummary.map((risk) => (
+        {normalizeRiskSummary(riskSummary).map((risk) => (
           <div
             className="risk-row"
             key={risk.risk_level}
@@ -599,7 +628,7 @@ function RiskAnalysisPage({
   const totalCustomers = Number(
     summary?.total_customers || 0
   );
-  const highRisk = riskSummary.find(
+  const highRisk = normalizeRiskSummary(riskSummary).find(
     (risk) => risk.risk_level === "High"
   );
   const highRiskCount = Number(
@@ -617,7 +646,7 @@ function RiskAnalysisPage({
     highRisk?.average_risk_score || 0
   );
 
-  const riskRows = [...riskSummary].sort(
+  const riskRows = [...normalizeRiskSummary(riskSummary)].sort(
     (left, right) =>
       Number(right.customer_count || 0) -
       Number(left.customer_count || 0)
@@ -2292,7 +2321,7 @@ function ReportsPage({
           </div>
 
           <div className="report-risk-list">
-            {riskSummary.map((risk) => (
+            {normalizeRiskSummary(riskSummary).map((risk) => (
               <div
                 className="report-risk-row"
                 key={risk.risk_level}
@@ -2661,7 +2690,7 @@ function App() {
 
         setSummary(summaryData);
         setPatterns(patternsData.items || []);
-        setRiskSummary(riskData.items || []);
+        setRiskSummary(normalizeRiskSummary(riskData.items));
         setError("");
       } catch (requestError) {
         setError(getApiErrorMessage(requestError));

@@ -65,6 +65,37 @@ def normalize_email_address(value: str) -> str:
     return address
 
 
+def normalize_report_risks(items) -> list[dict]:
+    """Keep one valid risk row per level in generated reports."""
+    allowed_levels = ("High", "Medium", "Low")
+    best_by_level = {}
+
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict):
+            continue
+
+        level = str(item.get("risk_level") or "").strip()
+        if level not in allowed_levels:
+            continue
+
+        try:
+            customer_count = int(float(item.get("customer_count") or 0))
+        except (TypeError, ValueError):
+            customer_count = 0
+
+        current = best_by_level.get(level)
+        if current is None or customer_count > current[0]:
+            best_by_level[level] = (customer_count, item)
+
+    normalized = []
+    for level in allowed_levels:
+        selected = best_by_level.get(level)
+        if selected is not None:
+            normalized.append(selected[1])
+
+    return normalized
+
+
 def _env_flag(name: str, default: bool) -> bool:
     value = os.getenv(name)
 
@@ -310,7 +341,9 @@ def build_report_pdf(report_data: dict) -> bytes:
         return table
 
     summary = report_data.get("summary", {})
-    risks = report_data.get("risk_summary", {}).get("items", [])
+    risks = normalize_report_risks(
+        report_data.get("risk_summary", {}).get("items", [])
+    )
     patterns = report_data.get("journey_patterns", {}).get("items", [])
     ai_data = report_data.get("ai_insights", {})
     categories = report_data.get("ticket_categories", {}).get("items", [])

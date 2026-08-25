@@ -44,6 +44,43 @@ def analytics_provider_id_for_user(current_user):
     return provider_id_for_user(current_user) or DEFAULT_PROVIDER_ID
 
 
+def normalized_provider_sql(column="provider_id"):
+    """Treat blank provider IDs as the default TecJA provider."""
+    escaped_default = DEFAULT_PROVIDER_ID.replace("'", "''")
+    return (
+        f"COALESCE(NULLIF(TRIM({column}), ''), "
+        f"'{escaped_default}')"
+    )
+
+
+def latest_customer_metrics_cte():
+    """Return one latest snapshot per normalized provider/customer pair."""
+    latest_provider_expression = normalized_provider_sql("provider_id")
+    customer_provider_expression = normalized_provider_sql(
+        "customer_metrics.provider_id"
+    )
+    return f"""
+    WITH latest_customer_metrics AS (
+        SELECT customer_metrics.*
+        FROM customer_metrics
+        INNER JOIN (
+            SELECT
+                {latest_provider_expression} AS provider_scope_id,
+                customer_id,
+                MAX(rowid) AS latest_rowid
+            FROM customer_metrics
+            GROUP BY
+                {latest_provider_expression},
+                customer_id
+        ) AS latest
+            ON latest.provider_scope_id =
+                {customer_provider_expression}
+            AND latest.customer_id = customer_metrics.customer_id
+            AND latest.latest_rowid = customer_metrics.rowid
+    )
+    """
+
+
 class LoginRequest(BaseModel):
     email: str | None = None
     username: str | None = None
@@ -215,16 +252,14 @@ def get_summary(
     current_user=Depends(get_current_user),
 ):
     provider_id = analytics_provider_id_for_user(current_user)
-    where_clause = ""
-    parameters = []
-
-    if provider_id:
-        where_clause = "WHERE provider_id = ?"
-        parameters.append(provider_id)
+    provider_scope = normalized_provider_sql()
+    where_clause = f"WHERE {provider_scope} = ?"
+    parameters = [provider_id]
 
     with get_connection() as connection:
         customer_summary = connection.execute(
             f"""
+            {latest_customer_metrics_cte()}
             SELECT
                 COUNT(*) AS total_customers,
 
@@ -279,7 +314,7 @@ def get_summary(
                     END
                 ) AS average_resolution_hours
 
-            FROM customer_metrics
+            FROM latest_customer_metrics
             {where_clause}
             """,
             parameters,
@@ -389,7 +424,7 @@ def get_customer_metrics(
             risk_level.strip().lower()
         )
 
-    conditions.append("provider_id = ?")
+    conditions.append(f"{normalized_provider_sql()} = ?")
     parameters.append(
         analytics_provider_id_for_user(current_user)
     )
@@ -402,14 +437,16 @@ def get_customer_metrics(
         )
 
     count_query = f"""
+        {latest_customer_metrics_cte()}
         SELECT COUNT(*) AS total_count
-        FROM customer_metrics
+        FROM latest_customer_metrics
         {where_clause}
     """
 
     data_query = f"""
+        {latest_customer_metrics_cte()}
         SELECT *
-        FROM customer_metrics
+        FROM latest_customer_metrics
         {where_clause}
         ORDER BY CAST(risk_score AS INTEGER) DESC
         LIMIT ? OFFSET ?
@@ -496,22 +533,18 @@ def get_risk_summary(
     current_user=Depends(get_current_user),
 ):
     provider_id = analytics_provider_id_for_user(current_user)
-    where_clause = ""
-    parameters = []
+    conditions = [
+        "risk_level IN ('High', 'Medium', 'Low')",
+        f"{normalized_provider_sql()} = ?",
+    ]
+    parameters = [provider_id]
 
-    if provider_id:
-        where_clause = "WHERE provider_id = ?"
-        parameters.append(provider_id)
-
-    risk_filter = (
-        "AND risk_level IN ('High', 'Medium', 'Low')"
-        if provider_id
-        else "WHERE risk_level IN ('High', 'Medium', 'Low')"
-    )
+    where_clause = "WHERE " + " AND ".join(conditions)
 
     with get_connection() as connection:
         rows = connection.execute(
             f"""
+            {latest_customer_metrics_cte()}
             SELECT
                 risk_level,
                 COUNT(*) AS customer_count,
@@ -526,9 +559,8 @@ def get_risk_summary(
                     AVG(CAST(NULLIF(risk_score, '') AS REAL)),
                     1
                 ) AS average_risk_score
-            FROM customer_metrics
+            FROM latest_customer_metrics
             {where_clause}
-            {risk_filter}
             GROUP BY risk_level
             ORDER BY CASE risk_level
                 WHEN 'High' THEN 1
