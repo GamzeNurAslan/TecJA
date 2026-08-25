@@ -54,10 +54,23 @@ def normalized_provider_sql(column="provider_id"):
 
 
 def latest_customer_metrics_cte():
-    """Return one latest snapshot per normalized provider/customer pair."""
+    """Return one latest baseline snapshot per provider/customer pair.
+
+    The synthetic baseline contains customers C00001-C05000. Live simulation
+    rows may add later customer IDs to the event stream, but those rows must
+    not inflate the fixed customer population or duplicate risk summary.
+    """
     latest_provider_expression = normalized_provider_sql("provider_id")
     customer_provider_expression = normalized_provider_sql(
         "customer_metrics.provider_id"
+    )
+    baseline_customer_filter = (
+        "CAST(SUBSTR(TRIM(customer_id), 2) AS INTEGER) "
+        "BETWEEN 1 AND 5000"
+    )
+    latest_customer_filter = (
+        "CAST(SUBSTR(TRIM(customer_metrics.customer_id), 2) AS INTEGER) "
+        "BETWEEN 1 AND 5000"
     )
     return f"""
     WITH latest_customer_metrics AS (
@@ -69,6 +82,7 @@ def latest_customer_metrics_cte():
                 customer_id,
                 MAX(rowid) AS latest_rowid
             FROM customer_metrics
+            WHERE {baseline_customer_filter}
             GROUP BY
                 {latest_provider_expression},
                 customer_id
@@ -77,6 +91,7 @@ def latest_customer_metrics_cte():
                 {customer_provider_expression}
             AND latest.customer_id = customer_metrics.customer_id
             AND latest.latest_rowid = customer_metrics.rowid
+        WHERE {latest_customer_filter}
     )
     """
 
