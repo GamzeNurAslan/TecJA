@@ -6,11 +6,11 @@ TecJA brings together customer, order, network event, and support ticket data fr
 
 The system keeps ISP data under a common platform while ensuring that each provider can access only its own customers through its own account. An administrator account can monitor anonymized aggregate metrics across providers.
 
-## Architecture
-
 ## Uygulama ekranı
 
 ![TecJA giriş ekranı](docs/images/tecja-login.png)
+
+## Architecture
 
 ```mermaid
 flowchart LR
