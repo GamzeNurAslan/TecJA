@@ -1,78 +1,78 @@
 # TecJA
 
-## Telekom müşteri yolculuğu ve risk izleme platformu
+## Telecom Customer Journey and Risk Monitoring Platform
 
-TecJA; farklı internet servis sağlayıcılarından gelen müşteri, sipariş, ağ olayı ve destek kaydı verilerini tek bir çalışma alanında birleştirir. Amaç, operasyon ekiplerinin müşteri yolculuğunu tek ekrandan takip etmesi, riskli müşterileri erken fark etmesi ve destek süreçlerini ölçülebilir hale getirmesidir.
+TecJA brings together customer, order, network event, and support ticket data from different internet service providers in a single workspace. Its goal is to help operations teams monitor the customer journey from one screen, identify high-risk customers early, and make support processes measurable.
 
-Sistem, ISS verilerini ortak bir çatı altında tutarken her sağlayıcının kendi müşterilerini yalnızca kendi hesabı üzerinden görmesini sağlar. Yönetici hesabı ise sağlayıcılar arası anonim toplamları izleyebilir.
+The system keeps ISP data under a common platform while ensuring that each provider can access only its own customers through its own account. An administrator account can monitor anonymized aggregate metrics across providers.
 
-## Mimari
+## Architecture
 
 ```mermaid
 flowchart LR
-    A[ISS veri kaynakları] --> B[Raw CSV]
+    A[ISP data sources] --> B[Raw CSV]
     B --> C[Bronze]
-    C --> D[Silver temizleme]
-    D --> E[Gold müşteri metrikleri]
+    C --> D[Silver cleaning]
+    D --> E[Gold customer metrics]
     E --> F[Analytics]
     F --> G[(SQLite)]
     G --> H[FastAPI]
-    H --> I[React arayüzü]
-    I --> J[Dashboard ve raporlar]
+    H --> I[React interface]
+    I --> J[Dashboard and reports]
 ```
 
-### Katmanlar
+### Layers
 
-| Katman | Görevi |
+| Layer | Responsibility |
 |---|---|
-| Raw | Kaynaktan gelen ilk CSV kayıtlarını saklar. |
-| Bronze | Ham verinin tarihçeli ve izlenebilir kopyasıdır. |
-| Silver | Tarih, boş alan ve veri tipi kontrollerinden geçirilmiş temiz veridir. |
-| Gold | Müşteri metrikleri ve yolculuk olaylarını analize hazır hale getirir. |
-| Analytics | Risk grupları, destek kategorileri ve yolculuk örüntülerini üretir. |
-| SQLite | API’nin hızlı ve merkezi veri okuma katmanıdır. |
-| FastAPI | Frontend ile veri katmanı arasındaki servis katmanıdır. |
-| React | Kullanıcının dashboard, müşteri ve rapor ekranlarını kullandığı arayüzdür. |
+| Raw | Stores the initial CSV records received from the source. |
+| Bronze | A historical and traceable copy of the raw data. |
+| Silver | Clean data processed through date, missing-field, and data-type checks. |
+| Gold | Prepares customer metrics and journey events for analysis. |
+| Analytics | Produces risk groups, support categories, and journey patterns. |
+| SQLite | A fast and centralized data access layer for the API. |
+| FastAPI | The service layer between the frontend and the data layer. |
+| React | The interface used to access dashboard, customer, and reporting screens. |
 
-## Veri akışı
+## Data Flow
 
-1. Veri kaynaklarından müşteri, sipariş, ağ olayı ve ticket kayıtları alınır.
-2. Kayıtlar Raw, Bronze, Silver ve Gold katmanlarından geçirilir.
-3. Temiz verilerden müşteri risk skoru, risk seviyesi ve yolculuk metrikleri hesaplanır.
-4. Her kayıt bir `provider_id` ile ISS’ye bağlanır.
-5. Kullanıcı giriş yaptığında hesabına bağlı ISS belirlenir.
-6. Analyst yalnızca kendi ISS’sinin kayıtlarını görür; admin anonim toplamlara ve yönetim işlevlerine erişir.
-7. FastAPI endpoint’leri güncel veriyi React ekranlarına taşır.
-8. Simülasyon çalışırken yeni olay ve ticket kayıtları veritabanına eklenir.
+1. Customer, order, network event, and ticket records are collected from data sources.
+2. Records pass through the Raw, Bronze, Silver, and Gold layers.
+3. Customer risk scores, risk levels, and journey metrics are calculated from the cleaned data.
+4. Each record is associated with an ISP through a `provider_id`.
+5. When a user signs in, the ISP associated with the account is identified.
+6. Analysts can see only their own ISP's records; administrators can access anonymized aggregates and management functions.
+7. FastAPI endpoints deliver the latest data to the React screens.
+8. While the simulation is running, new event and ticket records are added to the database.
 
-## Kullanılan teknolojiler
+## Technology Stack
 
 - Python 3.12
-- FastAPI ve Uvicorn
+- FastAPI and Uvicorn
 - SQLite
-- React ve Vite
-- CSV tabanlı lakehouse katmanları
-- ReportLab ile PDF raporu
-- Faker ile kontrollü demo verisi
-- Transformers ile ticket kategorilendirme
-- `unittest` ve FastAPI `TestClient` ile otomatik testler
+- React and Vite
+- CSV-based lakehouse layers
+- PDF reports with ReportLab
+- Controlled demo data with Faker
+- Ticket categorization with Transformers
+- Automated tests with `unittest` and FastAPI `TestClient`
 
-## Önemli ekranlar
+## Key Screens
 
-- **Dashboard:** toplam müşteri, yolculuk olayı, ticket, risk ve çözüm süresi özeti.
-- **Data Sources:** bağlı veri kaynaklarının ve kayıt hacimlerinin takibi.
-- **Ingestion:** veri pipeline’ının hangi katmana kadar ilerlediğini gösterir.
-- **Data Explorer:** müşterileri arama, risk filtresi uygulama ve sayfalar arasında gezinme.
-- **Journey Explorer:** seçilen müşterinin sipariş, aktivasyon, ağ olayı ve ticket geçmişini zaman çizelgesinde gösterir.
-- **Journey Patterns:** müşterilerde en sık görülen olay sıralarını listeler.
-- **Customer 360:** müşterinin risk skoru, siparişleri, ağ olayları ve destek geçmişini birlikte sunar.
-- **AI Insights:** ticket kayıtlarındaki en yoğun problem alanını ve önerilen operasyon aksiyonunu gösterir.
-- **Risk Analysis:** yüksek riskli müşteri grubunu ve öncelikli takip listesini çıkarır.
-- **Reports:** dashboard özetini CSV, Excel ve PDF olarak dışa aktarır.
+- **Dashboard:** Summary of total customers, journey events, tickets, risk, and resolution time.
+- **Data Sources:** Monitoring connected data sources and record volumes.
+- **Ingestion:** Shows how far the data pipeline has progressed through the layers.
+- **Data Explorer:** Search customers, apply risk filters, and navigate between pages.
+- **Journey Explorer:** Displays a selected customer's order, activation, network event, and ticket history on a timeline.
+- **Journey Patterns:** Lists the most common event sequences across customers.
+- **Customer 360:** Presents a customer's risk score, orders, network events, and support history together.
+- **AI Insights:** Shows the most frequent problem area in ticket records and the recommended operational action.
+- **Risk Analysis:** Produces a high-risk customer group and a prioritized follow-up list.
+- **Reports:** Exports the dashboard summary as CSV, Excel, and PDF.
 
-## API örnekleri
+## API Examples
 
-```http
+```
 GET /api/health
 GET /api/summary
 GET /api/customer-metrics?limit=50&offset=0
@@ -85,9 +85,9 @@ GET /api/notifications?limit=10
 POST /api/simulation/tick
 ```
 
-Giriş için:
+### Authentication
 
-```http
+```
 POST /api/auth/login
 Content-Type: application/json
 
@@ -95,22 +95,22 @@ Content-Type: application/json
   "email": "analyst@tecja.com",
   "password": "analyst123"
 }
-```
+``
 
-Girişten sonra dönen bearer token, korumalı endpoint’lerde `Authorization` header’ı ile kullanılır.
+The bearer token returned after login must be sent in the `Authorization` header when calling protected endpoints.
 
-## Güvenlik ve veri ayrımı
+## Security and Data Isolation
 
-- Parolalar düz metin olarak saklanmaz; PBKDF2-HMAC-SHA256 ile hash’lenir.
-- Oturum token’larının süresi vardır.
-- Analyst ve admin erişimleri ayrıdır.
-- ISS filtresi backend tarafında uygulanır; yalnızca frontend filtresine güvenilmez.
-- Simülasyon endpoint’i yalnızca yetkili yönetici tarafından çalıştırılır.
-- Testlerde gerçek veritabanı ve gerçek SMTP hesabı kullanılmaz.
+- Passwords are not stored in plain text; they are hashed with PBKDF2-HMAC-SHA256.
+- Session tokens expire.
+- Analyst and administrator access levels are separated.
+- ISP filtering is enforced on the backend; the system does not rely only on frontend filtering.
+- The simulation endpoint can be run only by an authorized administrator.
+- Tests do not use a real database or a real SMTP account.
 
-## Çalıştırma
+## Running the Project
 
-Backend terminali:
+### Backend
 
 ```powershell
 cd <project-root>
@@ -118,36 +118,37 @@ cd <project-root>
 python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Frontend terminali:
+### Frontend
+
+Open a second terminal:
 
 ```powershell
 cd <project-root>\frontend
 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
-## Testler
+## Tests
 
 ```powershell
 $env:PYTHONPATH = (Get-Location).Path
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Test paketi şu senaryoları kapsar:
+The test suite covers:
 
-1. Login ve korumalı endpoint erişimi
-2. Dashboard özeti
-3. Müşteri arama ve sayfalama
-4. ISS bazlı veri izolasyonu
-5. Simülasyon verisinin kalıcılığı
-6. Rapor endpoint’i ve e-posta adresi doğrulaması
+- Login and protected endpoint access
+- Dashboard summary
+- Customer search and pagination
+- ISP-based data isolation
+- Simulation data persistence
+- Report endpoints and email address validation
 
-## Proje notu
+## Project Note
 
-TecJA’nın temel farkı yalnızca grafik göstermek değildir. Veri hazırlama, müşteri yolculuğu, risk analizi, ISS bazlı erişim ve operasyonel raporlama aynı akışta birleştirilmiştir. Böylece ekipler sorunu yalnızca gördükleri anda değil, müşterinin yaşadığı yolculuğun tamamı üzerinden değerlendirebilir.
+TecJA's core difference is not simply that it displays charts. Data preparation, customer journeys, risk analysis, ISP-based access control, and operational reporting are combined in one workflow. This allows teams to evaluate an issue not only when it appears, but through the full journey experienced by the customer.
 
 ## Copyright
 
 Copyright © 2026 Gamze Nur Aslan. All rights reserved.
 
-TecJA kaynak kodu, tasarımı ve dokümantasyonu sahibinin yazılı izni
-olmaksızın kopyalanamaz, dağıtılamaz veya ticari amaçla kullanılamaz.
+The TecJA source code, design, and documentation may not be copied, distributed, or used for commercial purposes without the owner's written permission.
