@@ -8,6 +8,10 @@ The system keeps ISP data under a common platform while ensuring that each provi
 
 ## Architecture
 
+## Uygulama ekranı
+
+![TecJA giriş ekranı](docs/images/tecja-login.png)
+
 ```mermaid
 flowchart LR
     A[ISP data sources] --> B[Raw CSV]
