@@ -1,17 +1,21 @@
+# Local secrets and environment files
 .env
 .env.*
 !.env.example
-*.db
-*.db-*
-__pycache__/
-*.py[cod]
-.venv/
-node_modules/
-frontend/node_modules/
-frontend/dist/
-.vite-cache/
-.codex-stage/
-pdf-preview/
-*.log
-*.pdf
 
+# Local databases and generated datasets
+*.db
+*.sqlite
+*.sqlite3
+*.db.backup
+data/**/*.csv
+
+# Local logs and runtime files
+*.log
+__pycache__/
+node_modules/
+dist/
+
+.codex-stage/
+.vite-cache/
+.pytest_cache/
