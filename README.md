@@ -99,9 +99,11 @@ Content-Type: application/json
   "email": "analyst@tecja.com",
   "password": "analyst123"
 }
-``
+```
 
 The bearer token returned after login must be sent in the `Authorization` header when calling protected endpoints.
+
+> The credentials above are demo-only credentials for local presentation. Do not use them in a production environment.
 
 ## Security and Data Isolation
 
